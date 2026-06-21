@@ -3,6 +3,7 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { withBasePath } from "@/lib/config";
 
 // 用語・トピックを ONE PIECE の文脈で深掘り解説するボタン（§4-7）
 export default function ExplainButton({ topic }: { topic: string }) {
@@ -20,7 +21,7 @@ export default function ExplainButton({ topic }: { topic: string }) {
     setError(null);
     setOpen(true);
     try {
-      const res = await fetch("/api/explain", {
+      const res = await fetch(withBasePath("/api/explain"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic }),

@@ -7,6 +7,7 @@ import QuizPlayer from "./components/QuizPlayer";
 import ResultView from "./components/ResultView";
 import ScoreBoard from "./components/ScoreBoard";
 import HistorySidebar from "./components/HistorySidebar";
+import { withBasePath } from "@/lib/config";
 import {
   addHistory,
   clearHistory,
@@ -67,7 +68,7 @@ export default function Home() {
     setPhase("loading");
     const endpoint = latestMode ? "/api/latest" : "/api/quiz";
     try {
-      const res = await fetch(endpoint, {
+      const res = await fetch(withBasePath(endpoint), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ difficulty, category, count }),
