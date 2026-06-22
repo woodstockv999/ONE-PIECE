@@ -1,8 +1,8 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { buildExplainPrompt } from "@/lib/prompts";
 import { extractText } from "@/lib/parse";
 import { errStatus, toUserMessage } from "@/lib/apiError";
+import { createAnthropicClient } from "@/lib/claudeClient";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -11,15 +11,11 @@ const MODEL = "claude-sonnet-4-6";
 
 // 深掘り・解説モード（§4-7）
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      {
-        error:
-          "APIキーが設定されていません。サーバーの環境変数 ANTHROPIC_API_KEY を設定してください。",
-      },
-      { status: 500 },
-    );
+  let client: ReturnType<typeof createAnthropicClient>;
+  try {
+    client = createAnthropicClient();
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
 
   let body: { topic?: string };
@@ -36,8 +32,6 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-
-  const client = new Anthropic({ apiKey });
 
   try {
     const response = await client.messages.create({

@@ -9,8 +9,10 @@
 #     ※ nginx 操作のみ sudo が必要。それ以外は一般ユーザーで実行可能。
 #
 # 使い方（W00dst0ck ユーザーで実行）:
-#   ANTHROPIC_API_KEY=sk-ant-... bash deploy/deploy.sh
-#   （初回に .env.local が無ければキーを書き込む。既にあれば尊重して上書きしない）
+#   [推奨] claude login 済みであれば API キー不要:
+#     bash deploy/deploy.sh
+#   [代替] Anthropic API キーを使う場合:
+#     ANTHROPIC_API_KEY=sk-ant-... bash deploy/deploy.sh
 #
 # 上書き/変更可能な環境変数:
 #   APP_DIR    (default ~/apps/one-piece)
@@ -53,18 +55,26 @@ fi
 
 cd "$APP_DIR"
 
-# --- APIキー (.env.local) ---
-if [ ! -f .env.local ]; then
-  if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
-    log ".env.local を作成（ANTHROPIC_API_KEY を書き込み）"
-    printf 'ANTHROPIC_API_KEY=%s\n' "$ANTHROPIC_API_KEY" > .env.local
-  else
-    log ".env.local が無く ANTHROPIC_API_KEY も未指定。例ファイルから作成（後で要編集）"
-    cp .env.local.example .env.local
-    echo "  → $APP_DIR/.env.local に APIキーを設定してください。"
-  fi
+# --- 認証確認 ---
+# claude CLI の OAuth トークンが ~/.claude/.credentials.json にあれば API キー不要。
+# なければ ANTHROPIC_API_KEY を .env.local に書き込む。
+if [ -f "$HOME/.claude/.credentials.json" ]; then
+  log "claude CLI のサブスク認証を使用します（API キー不要）"
+  # .env.local が無ければ空ファイルを作成（Next.js が要求するため）
+  touch .env.local
 else
-  log ".env.local は既存のため尊重（上書きしません）"
+  if [ ! -f .env.local ]; then
+    if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+      log ".env.local を作成（ANTHROPIC_API_KEY を書き込み）"
+      printf 'ANTHROPIC_API_KEY=%s\n' "$ANTHROPIC_API_KEY" > .env.local
+    else
+      log "警告: claude CLI 未ログイン・ANTHROPIC_API_KEY も未設定。例ファイルから作成します"
+      cp .env.local.example .env.local
+      echo "  → 'claude login' を実行するか $APP_DIR/.env.local に API キーを設定してください。"
+    fi
+  else
+    log ".env.local は既存のため尊重（上書きしません）"
+  fi
 fi
 
 # --- 依存 & ビルド ---
