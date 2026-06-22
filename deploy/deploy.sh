@@ -20,7 +20,7 @@
 #   BASE_PATH  (default /onepiece)
 #   APP_NAME   (default onepiece)
 #   PORTAL_DIR (default ~/www/portal)
-#   REPO_URL, BRANCH (default claude/one-piece-quiz-app-939600)
+#   REPO_URL, BRANCH (default main)
 #   NGINX_CONF (default ~/etc/nginx-onepiece.conf — sudo でコピー先を指定)
 
 set -euo pipefail
@@ -31,7 +31,7 @@ BASE_PATH="${BASE_PATH:-/onepiece}"
 APP_NAME="${APP_NAME:-onepiece}"
 PORTAL_DIR="${PORTAL_DIR:-$HOME/www/portal}"
 REPO_URL="${REPO_URL:-https://github.com/woodstockv999/ONE-PIECE.git}"
-BRANCH="${BRANCH:-claude/one-piece-quiz-app-939600}"
+BRANCH="${BRANCH:-main}"
 
 log() { printf '\n\033[1;32m==> %s\033[0m\n' "$*"; }
 
