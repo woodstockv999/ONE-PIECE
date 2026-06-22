@@ -92,6 +92,21 @@ npm run start                            # 既定で :3000 で起動
 
 本番運用では **PM2 や systemd でプロセス管理**し、**Nginx をリバースプロキシ**にして 80/443 を 3000 に転送する構成を推奨します。**API キーは `.env.local` をコミットせず、環境変数（systemd の `Environment=` / シークレット管理）で安全に設定**してください。
 
+### ポータル配下にサブパス配信（推奨・複数アプリ構成）
+
+複数アプリを 1 台の VPS にぶら下げる構成（`/` ポータル、`/onepiece` 本アプリ:3001、`/briefing` 別アプリ:3000 …）に対応しています。本アプリは `basePath=/onepiece`（環境変数 `NEXT_PUBLIC_BASE_PATH` で変更可）でビルドされます。
+
+VPS 上（root）でワンコマンド配置（取得→ビルド→PM2:3001→ポータル設置→Nginx 設定）:
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-... bash deploy/deploy.sh
+```
+
+- ポータル本体: `deploy/portal/index.html`
+- Nginx 構成: `deploy/nginx.conf`（`/`→ポータル / `/briefing`→:3000 / `/onepiece`→:3001）
+- 別アプリ（briefing 等）も、それぞれ自分の basePath に合わせる必要があります。
+
+
 <details>
 <summary>systemd ユニット例</summary>
 
