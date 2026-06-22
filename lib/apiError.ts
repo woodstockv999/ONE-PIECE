@@ -10,10 +10,10 @@ export function errStatus(err: unknown): number {
 // Anthropic の API エラーをユーザー向けの分かりやすい日本語メッセージに変換
 export function toUserMessage(err: unknown): string {
   if (err instanceof Anthropic.AuthenticationError) {
-    return "APIキーが無効です。Anthropic Console のキーを確認してください。";
+    return "認証に失敗しました。claude CLI で再ログインするか、ANTHROPIC_API_KEY を確認してください。";
   }
   if (err instanceof Anthropic.PermissionDeniedError) {
-    return "APIキーの権限が不足しています。";
+    return "アクセス権限がありません。サブスクリプションの有効期限または利用制限をご確認ください。";
   }
   if (err instanceof Anthropic.RateLimitError) {
     return "レート制限に達しました。しばらく待って再度お試しください。";
