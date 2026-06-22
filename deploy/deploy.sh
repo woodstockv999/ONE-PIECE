@@ -4,8 +4,8 @@
 # 役割:
 #   - リポジトリを取得/更新し、basePath=/onepiece でビルド
 #   - PM2 で :3001 常駐（既存なら再起動）
-#   - ルートのポータル(index.html)を配置
-#   - Nginx をポータル構成（/ , /briefing→3000 , /onepiece→3001）に設定
+#   - ルートのポータル(index.html)を配置（marumie と同列に配置）
+#   - Nginx をポータル構成（/ , /marumie→3000 , /onepiece→3001）に設定
 #
 # 使い方（VPS 上で root 実行）:
 #   ANTHROPIC_API_KEY=sk-ant-... bash deploy/deploy.sh
@@ -14,7 +14,7 @@
 # 上書き/変更可能な環境変数:
 #   APP_DIR (default /opt/one-piece), PORT (3001), BASE_PATH (/onepiece),
 #   APP_NAME (onepiece), PORTAL_DIR (/var/www/portal),
-#   REPO_URL, BRANCH (claude/onepiece-quiz-app-09vgdi)
+#   REPO_URL, BRANCH (claude/one-piece-quiz-app-939600)
 
 set -euo pipefail
 
@@ -24,7 +24,7 @@ BASE_PATH="${BASE_PATH:-/onepiece}"
 APP_NAME="${APP_NAME:-onepiece}"
 PORTAL_DIR="${PORTAL_DIR:-/var/www/portal}"
 REPO_URL="${REPO_URL:-https://github.com/woodstockv999/ONE-PIECE.git}"
-BRANCH="${BRANCH:-claude/onepiece-quiz-app-09vgdi}"
+BRANCH="${BRANCH:-claude/one-piece-quiz-app-939600}"
 
 log() { printf '\n\033[1;32m==> %s\033[0m\n' "$*"; }
 
