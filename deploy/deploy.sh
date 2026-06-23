@@ -45,7 +45,7 @@ if [ -d "$APP_DIR/.git" ]; then
   log "既存リポジトリを更新: $APP_DIR"
   git -C "$APP_DIR" fetch origin "$BRANCH"
   git -C "$APP_DIR" checkout "$BRANCH"
-  git -C "$APP_DIR" pull --ff-only origin "$BRANCH"
+  git -C "$APP_DIR" reset --hard "origin/$BRANCH"
 else
   log "リポジトリを取得: $REPO_URL"
   git clone --branch "$BRANCH" "$REPO_URL" "$APP_DIR"
