@@ -119,21 +119,29 @@ export default function ResultView({
       </div>
 
       {/* 操作 */}
-      <div className="mt-6 flex gap-3">
-        <button
-          type="button"
-          onClick={onRetry}
-          className="flex-1 rounded-lg bg-straw-600 px-4 py-3 font-semibold text-white transition hover:bg-straw-700"
+      <div className="mt-6 flex flex-col gap-3">
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onRetry}
+            className="flex-1 rounded-lg bg-straw-600 px-4 py-3 font-semibold text-white transition hover:bg-straw-700"
+          >
+            もう一度挑戦
+          </button>
+          <button
+            type="button"
+            onClick={onHome}
+            className="flex-1 rounded-lg border border-gray-200 px-4 py-3 font-semibold text-gray-700 transition hover:bg-gray-50"
+          >
+            設定に戻る
+          </button>
+        </div>
+        <a
+          href="/"
+          className="block rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-center font-semibold text-blue-700 transition hover:bg-blue-100"
         >
-          もう一度挑戦
-        </button>
-        <button
-          type="button"
-          onClick={onHome}
-          className="flex-1 rounded-lg border border-gray-200 px-4 py-3 font-semibold text-gray-700 transition hover:bg-gray-50"
-        >
-          設定に戻る
-        </button>
+          🏠 トップページへ戻る
+        </a>
       </div>
     </div>
   );
