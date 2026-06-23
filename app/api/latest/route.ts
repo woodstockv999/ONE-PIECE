@@ -91,6 +91,12 @@ export async function POST(req: NextRequest) {
         { status: 503 },
       );
     }
+    if (msg.includes("GEMINI_TIMEOUT")) {
+      return NextResponse.json(
+        { error: "Gemini APIの応答がタイムアウトしました。しばらく待ってから再度お試しください。" },
+        { status: 504 },
+      );
+    }
     return NextResponse.json(
       { error: "クイズの生成に失敗しました。もう一度お試しください。" },
       { status: 500 },

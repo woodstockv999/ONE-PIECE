@@ -80,9 +80,16 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ difficulty, category, count, seenQuestions }),
       });
-      const data = await res.json();
+      let data: unknown;
+      try {
+        data = await res.json();
+      } catch {
+        setError("サーバーエラーが発生しました。しばらく待ってから再度お試しください。");
+        setPhase("select");
+        return;
+      }
       if (!res.ok) {
-        setError(data.error ?? "クイズの生成に失敗しました。");
+        setError(data?.error ?? "クイズの生成に失敗しました。");
         setPhase("select");
         return;
       }
