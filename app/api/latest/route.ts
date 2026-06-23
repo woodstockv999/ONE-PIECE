@@ -9,9 +9,10 @@ export const runtime = "nodejs";
 // Web検索は数十秒かかるため長めに
 export const maxDuration = 120;
 
-// Claude Code (claude-sonnet-4-6) と同じモデル・同じOAuthトークンを使うと
-// サブスク内のレート枠を奪い合い 429 になるため Haiku を使用する。
-const MODEL = "claude-haiku-4-5-20251001";
+// web_search ツールは Sonnet 4.6 以上が必要なため Sonnet を使用する。
+// 最新話モードはユーザーが明示的にオンにする低頻度機能のため、
+// Sonnet を使っても通常クイズ（Haiku）との競合は最小限に抑えられる。
+const MODEL = "claude-sonnet-4-6";
 
 // 最新話モード：Anthropic の web search ツールを併用（§3・§4-6）
 export async function POST(req: NextRequest) {
