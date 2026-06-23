@@ -89,12 +89,13 @@ export default function Home() {
         return;
       }
       if (!res.ok) {
-        setError(data?.error ?? "クイズの生成に失敗しました。");
+        setError((data as { error?: string })?.error ?? "クイズの生成に失敗しました。");
         setPhase("select");
         return;
       }
-      setQuestions(data.questions);
-      setAnswers(data.questions.map(() => null));
+      const d = data as { questions: Question[] };
+      setQuestions(d.questions);
+      setAnswers(d.questions.map(() => null));
       setPhase("playing");
     } catch {
       setError("通信に失敗しました。ネットワークを確認してください。");
