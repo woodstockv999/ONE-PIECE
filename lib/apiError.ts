@@ -17,8 +17,8 @@ export function toUserMessage(err: unknown): string {
   }
   if (err instanceof Anthropic.RateLimitError) {
     // Claude.ai の「使用量」(月次メッセージ数) とは別に、API には分間リクエスト数の制限があります。
-    // 使用量が残っていても、短時間に多くのリクエストを送ると 429 が返ることがあります。
-    return "APIのリクエスト数制限に達しました（Claude.aiの使用量とは別の制限です）。1〜2分待ってから再度お試しください。";
+    // SDK が maxRetries=3 で自動リトライした後もここに到達した場合は一時的な混雑です。
+    return "APIが一時的に混雑しています。しばらく待ってから再度お試しください。";
   }
   if (err instanceof Anthropic.APIError) {
     if (err.status === 400 || err.status === 403) {
