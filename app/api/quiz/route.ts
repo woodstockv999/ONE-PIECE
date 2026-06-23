@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
 
-  let body: { difficulty?: string; category?: string; count?: number };
+  let body: { difficulty?: string; category?: string; count?: number; seenQuestions?: string[] };
   try {
     body = await req.json();
   } catch {
@@ -31,6 +31,9 @@ export async function POST(req: NextRequest) {
   const difficulty = (body.difficulty ?? "初級") as Difficulty;
   const category = (body.category ?? "総合（ミックス）").toString().slice(0, 60);
   const count = Math.min(Math.max(Number(body.count) || 3, 1), 10);
+  const seenQuestions = Array.isArray(body.seenQuestions)
+    ? body.seenQuestions.filter((q) => typeof q === "string").slice(0, 30)
+    : [];
 
   if (!DIFFICULTIES.includes(difficulty)) {
     return NextResponse.json({ error: "難易度が不正です。" }, { status: 400 });
@@ -41,7 +44,7 @@ export async function POST(req: NextRequest) {
       model: MODEL,
       max_tokens: maxTokensForCount(count),
       messages: [
-        { role: "user", content: buildQuizPrompt(difficulty, category, count) },
+        { role: "user", content: buildQuizPrompt(difficulty, category, count, seenQuestions) },
       ],
     });
 
