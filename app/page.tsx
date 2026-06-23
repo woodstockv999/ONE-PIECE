@@ -275,6 +275,7 @@ export default function Home() {
             onHome={() => {
               setPhase("select");
               setError(null);
+              window.scrollTo({ top: 0, behavior: "smooth" });
             }}
           />
         )}

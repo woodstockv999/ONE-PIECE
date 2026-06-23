@@ -34,7 +34,10 @@ export async function generateWithRetry(
       const response = await ai.models.generateContent({
         model,
         contents,
-        ...(tools ? { config: { tools } } : {}),
+        config: {
+          ...(tools ? { tools } : {}),
+          temperature: 1.8,
+        },
       });
       return response.text ?? "";
     } catch (err: unknown) {
