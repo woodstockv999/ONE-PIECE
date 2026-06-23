@@ -68,8 +68,9 @@ export default function Home() {
     setPhase("loading");
     const endpoint = latestMode ? "/api/latest" : "/api/quiz";
 
-    // 履歴から既出問題文を最大30件収集してモデルに渡す（重複防止）
-    const seenQuestions = history
+    // localStorage から直接読んで既出問題文を最大30件収集してモデルに渡す（重複防止）
+    // React ステートの更新タイミングに依存せず確実に最新履歴を取得する
+    const seenQuestions = loadHistory()
       .flatMap((entry) => entry.questions.map((q) => q.q))
       .slice(0, 30);
 
