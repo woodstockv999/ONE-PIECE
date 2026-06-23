@@ -44,6 +44,7 @@ export default function Home() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState<boolean>(false);
 
   // 永続データ
   const [settings, setSettings] = useState<Settings>({ gradingMode: "batch" });
@@ -65,26 +66,50 @@ export default function Home() {
 
   async function startQuiz() {
     setError(null);
+    setRetrying(false);
     setPhase("loading");
     const endpoint = latestMode ? "/api/latest" : "/api/quiz";
-    try {
-      const res = await fetch(withBasePath(endpoint), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ difficulty, category, count }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "クイズの生成に失敗しました。");
+    // 429 (レート制限) の場合、8秒・16秒待機して最大2回自動リトライする
+    const RETRY_DELAYS_MS = [8000, 16000];
+    for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+      try {
+        const res = await fetch(withBasePath(endpoint), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ difficulty, category, count }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          if (res.status === 429 && attempt < RETRY_DELAYS_MS.length) {
+            setRetrying(true);
+            await new Promise((resolve) =>
+              setTimeout(resolve, RETRY_DELAYS_MS[attempt]),
+            );
+            continue;
+          }
+          setRetrying(false);
+          setError(data.error ?? "クイズの生成に失敗しました。");
+          setPhase("select");
+          return;
+        }
+        setRetrying(false);
+        setQuestions(data.questions);
+        setAnswers(data.questions.map(() => null));
+        setPhase("playing");
+        return;
+      } catch {
+        if (attempt < RETRY_DELAYS_MS.length) {
+          setRetrying(true);
+          await new Promise((resolve) =>
+            setTimeout(resolve, RETRY_DELAYS_MS[attempt]),
+          );
+          continue;
+        }
+        setRetrying(false);
+        setError("通信に失敗しました。ネットワークを確認してください。");
         setPhase("select");
         return;
       }
-      setQuestions(data.questions);
-      setAnswers(data.questions.map(() => null));
-      setPhase("playing");
-    } catch {
-      setError("通信に失敗しました。ネットワークを確認してください。");
-      setPhase("select");
     }
   }
 
@@ -239,9 +264,13 @@ export default function Home() {
           <div className="flex flex-col items-center justify-center py-16">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-straw-200 border-t-straw-600" />
             <p className="mt-4 text-sm text-gray-600">
-              {latestMode ? "最新情報を検索中…" : "問題を作成中…"}
+              {retrying
+                ? "APIが混雑しています。しばらくしてから再試行中…"
+                : latestMode
+                  ? "最新情報を検索中…"
+                  : "問題を作成中…"}
             </p>
-            {latestMode && (
+            {latestMode && !retrying && (
               <p className="mt-1 text-xs text-gray-400">
                 Web検索のため数十秒かかります
               </p>

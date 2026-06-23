@@ -31,7 +31,7 @@ export function createAnthropicClient(): Anthropic {
         oauthTokenExpired = true;
         // 期限切れの場合は ANTHROPIC_API_KEY へフォールバック
       } else {
-        return new Anthropic({ authToken: token, maxRetries: 3 });
+        return new Anthropic({ authToken: token, maxRetries: 5 });
       }
     }
   } catch {
@@ -40,7 +40,7 @@ export function createAnthropicClient(): Anthropic {
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (apiKey) {
-    return new Anthropic({ apiKey, maxRetries: 3 });
+    return new Anthropic({ apiKey, maxRetries: 5 });
   }
 
   throw new Error(
