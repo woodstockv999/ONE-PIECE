@@ -209,7 +209,7 @@ export default function Home() {
               </label>
               <label className="flex items-center justify-between text-sm">
                 <span className="text-gray-700">
-                  ⚡ 最新話モード（Web検索・数十秒）
+                  ⚡ 最新話モード（Web検索）
                 </span>
                 <input
                   type="checkbox"
@@ -220,7 +220,7 @@ export default function Home() {
               </label>
               {latestMode && (
                 <p className="rounded bg-amber-50 px-2 py-1.5 text-xs text-amber-800">
-                  ⚠️ ネタバレ注意：最新話の展開に関する問題が出ます。Web検索のため生成に数十秒かかります。
+                  ⚠️ ネタバレ注意：最新話の展開に関する問題が出ます。Google検索のため生成に数十秒かかります。
                 </p>
               )}
             </div>
