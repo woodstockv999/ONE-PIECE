@@ -67,11 +67,17 @@ export default function Home() {
     setError(null);
     setPhase("loading");
     const endpoint = latestMode ? "/api/latest" : "/api/quiz";
+
+    // 履歴から既出問題文を最大30件収集してモデルに渡す（重複防止）
+    const seenQuestions = history
+      .flatMap((entry) => entry.questions.map((q) => q.q))
+      .slice(0, 30);
+
     try {
       const res = await fetch(withBasePath(endpoint), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ difficulty, category, count }),
+        body: JSON.stringify({ difficulty, category, count, seenQuestions }),
       });
       const data = await res.json();
       if (!res.ok) {
