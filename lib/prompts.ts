@@ -24,7 +24,7 @@ export function buildQuizPrompt(
 ): string {
   const seenSection =
     seenQuestions.length > 0
-      ? `\n# 出題禁止リスト（既出問題）\n以下の問題はすでに出題済みです。これらと同一または非常に類似した問題は絶対に出題しないこと。\n${seenQuestions.map((q, i) => `${i + 1}. ${q}`).join("\n")}\n`
+      ? `\n# 【絶対禁止】既出問題リスト\n以下は過去に出題済みの問題文です。\n- これらと「全く同じ問題」は絶対に出題しない。\n- これらと「同じ知識を問う問題」（言い回しを変えても正解が同じになる問題）も絶対に出題しない。\n- 出題前に各問を必ずこのリストと照合すること。\n${seenQuestions.map((q, i) => `${i + 1}. ${q}`).join("\n")}\n`
       : "";
 
   return `あなたは漫画「ONE PIECE」（尾田栄一郎・集英社）に精通したクイズ作成者です。
@@ -35,7 +35,7 @@ export function buildQuizPrompt(
 - カテゴリ: ${category}
 - 各問は4つの選択肢を持ち、正解はちょうど1つ。
 - 選択肢は紛らわしく、かつ事実として明確に判定できるものにする。
-- 同じ問題・似すぎた問題を繰り返さない。${seenSection}
+- まだ上記リストにない、新しい切り口の問題を選ぶこと。${seenSection}
 
 # 正確性（最重要）
 - 確実な事実のみを出題すること。少しでも曖昧・うろ覚えの設定は出題しない。
@@ -73,7 +73,7 @@ export function buildLatestQuizPrompt(
 ): string {
   const seenSection =
     seenQuestions.length > 0
-      ? `\n# 出題禁止リスト（既出問題）\n以下の問題はすでに出題済みです。これらと同一または非常に類似した問題は絶対に出題しないこと。\n${seenQuestions.map((q, i) => `${i + 1}. ${q}`).join("\n")}\n`
+      ? `\n# 【絶対禁止】既出問題リスト\n以下は過去に出題済みの問題文です。\n- これらと「全く同じ問題」は絶対に出題しない。\n- これらと「同じ知識を問う問題」（言い回しを変えても正解が同じになる問題）も絶対に出題しない。\n- 出題前に各問を必ずこのリストと照合すること。\n${seenQuestions.map((q, i) => `${i + 1}. ${q}`).join("\n")}\n`
       : "";
 
   const today = new Date().toLocaleDateString("ja-JP", {

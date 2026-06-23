@@ -72,7 +72,7 @@ export default function Home() {
     // React ステートの更新タイミングに依存せず確実に最新履歴を取得する
     const seenQuestions = loadHistory()
       .flatMap((entry) => entry.questions.map((q) => q.q))
-      .slice(0, 30);
+      .slice(0, 60);
 
     try {
       const res = await fetch(withBasePath(endpoint), {

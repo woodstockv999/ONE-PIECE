@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   const category = (body.category ?? "総合（ミックス）").toString().slice(0, 60);
   const count = Math.min(Math.max(Number(body.count) || 3, 1), 10);
   const seenQuestions = Array.isArray(body.seenQuestions)
-    ? body.seenQuestions.filter((q) => typeof q === "string").slice(0, 30)
+    ? body.seenQuestions.filter((q) => typeof q === "string").slice(0, 60)
     : [];
 
   if (!DIFFICULTIES.includes(difficulty)) {
