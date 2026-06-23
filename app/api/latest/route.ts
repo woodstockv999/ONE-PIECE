@@ -9,7 +9,9 @@ export const runtime = "nodejs";
 // Web検索は数十秒かかるため長めに
 export const maxDuration = 120;
 
-const MODEL = "claude-sonnet-4-6";
+// Claude Code (claude-sonnet-4-6) と同じモデル・同じOAuthトークンを使うと
+// サブスク内のレート枠を奪い合い 429 になるため Haiku を使用する。
+const MODEL = "claude-haiku-4-5-20251001";
 
 // 最新話モード：Anthropic の web search ツールを併用（§3・§4-6）
 export async function POST(req: NextRequest) {

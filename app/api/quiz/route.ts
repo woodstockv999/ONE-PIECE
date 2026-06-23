@@ -9,7 +9,9 @@ export const runtime = "nodejs";
 // 生成に数秒かかるため余裕を持たせる（Vercel の関数タイムアウト目安）
 export const maxDuration = 60;
 
-const MODEL = "claude-sonnet-4-6"; // 正答精度を重視（§3・§12）
+// Claude Code (claude-sonnet-4-6) と同じモデル・同じOAuthトークンを使うと
+// サブスク内のレート枠を奪い合い 429 になるため Haiku を使用する。
+const MODEL = "claude-haiku-4-5-20251001";
 
 export async function POST(req: NextRequest) {
   let client: ReturnType<typeof createAnthropicClient>;
