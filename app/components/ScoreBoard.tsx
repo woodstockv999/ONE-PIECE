@@ -11,44 +11,43 @@ export default function ScoreBoard({
   onReset: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
+    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-gray-700">自己ベスト記録</h2>
+        <h2 className="text-sm font-black text-white/80">🏆 自己ベスト</h2>
         <button
           type="button"
           onClick={onReset}
-          className="text-xs text-gray-400 hover:text-red-500"
+          className="text-xs text-white/30 transition hover:text-red-400"
         >
           リセット
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <Stat label="最高正答率" value={`${score.bestScorePercent}%`} />
-        <Stat label="最高連続正解" value={`${score.bestStreak}`} />
-        <Stat label="累計挑戦" value={`${score.totalAttempts}`} />
+      <div className="mb-3 grid grid-cols-3 gap-2">
+        <StatCell label="最高正答率" value={`${score.bestScorePercent}%`} />
+        <StatCell label="最高連続" value={`${score.bestStreak}問`} />
+        <StatCell label="累計挑戦" value={`${score.totalAttempts}回`} />
       </div>
 
-      {/* 難易度別 正答率 */}
-      <div className="mt-3 space-y-1">
+      <div className="space-y-2 border-t border-white/10 pt-3">
         {DIFFICULTIES.map((d) => {
           const s = score.perDifficulty[d];
           const pct =
             s && s.total > 0 ? Math.round((s.correct / s.total) * 100) : null;
           return (
-            <div
-              key={d}
-              className="flex items-center justify-between text-xs text-gray-500"
-            >
-              <span>{d}</span>
-              <span>
-                {pct === null ? "—" : `${pct}%`}
-                {s && s.total > 0 && (
-                  <span className="ml-1 text-gray-300">
-                    ({s.correct}/{s.total})
-                  </span>
-                )}
-              </span>
+            <div key={d} className="flex items-center justify-between gap-2">
+              <span className="text-xs text-white/50">{d}</span>
+              <div className="flex flex-1 items-center justify-end gap-2">
+                <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-straw-500 transition-all"
+                    style={{ width: pct !== null ? `${pct}%` : "0%" }}
+                  />
+                </div>
+                <span className="w-8 text-right text-xs text-white/60">
+                  {pct === null ? "—" : `${pct}%`}
+                </span>
+              </div>
             </div>
           );
         })}
@@ -57,11 +56,11 @@ export default function ScoreBoard({
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function StatCell({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-gray-50 p-2">
-      <div className="text-lg font-bold text-straw-700">{value}</div>
-      <div className="text-[10px] text-gray-500">{label}</div>
+    <div className="rounded-lg bg-white/5 p-2.5 text-center">
+      <div className="text-lg font-black text-straw-400">{value}</div>
+      <div className="mt-0.5 text-[9px] leading-tight text-white/35">{label}</div>
     </div>
   );
 }

@@ -26,94 +26,55 @@ export default function ResultView({
   const percent = total > 0 ? Math.round((correct / total) * 100) : 0;
   const streak = computeBestStreak(questions, answers);
 
+  const rank =
+    percent === 100
+      ? "海賊王"
+      : percent >= 80
+        ? "四皇級"
+        : percent >= 60
+          ? "七武海級"
+          : percent >= 40
+            ? "新世界入門"
+            : "東の海";
+
   return (
     <div>
-      {/* サマリー */}
-      <div className="mb-5 rounded-xl bg-straw-50 p-5 text-center">
-        <div className="text-sm text-gray-500">結果</div>
-        <div className="my-1 text-4xl font-extrabold text-straw-700">
-          {correct}
-          <span className="text-2xl text-gray-400"> / {total}</span>
+      {/* スコアサマリー */}
+      <div className="mb-6 rounded-2xl bg-gradient-to-br from-straw-600 to-straw-800 p-6 text-center text-white shadow-lg">
+        <div className="text-xs font-black uppercase tracking-widest opacity-70 mb-1">
+          クリア結果
         </div>
-        <div className="text-sm text-gray-600">
-          正答率 {percent}%・最大連続正解 {streak}
+        <div className="my-1 text-6xl font-black">
+          {correct}
+          <span className="text-3xl opacity-50">/{total}</span>
+        </div>
+        <div className="text-xl font-bold opacity-90">{percent}% 正解</div>
+        <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1.5">
+          <span className="text-sm font-black">{rank}</span>
+          {streak > 1 && (
+            <span className="text-xs opacity-75">連続正解 {streak} 問</span>
+          )}
         </div>
       </div>
 
-      {/* 免責（ハルシネーション対策D） */}
-      <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+      {/* 免責 */}
+      <p className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
         ⚠️ 問題と解説は AI（Claude）が生成しています。まれに誤りを含む可能性があります。
       </p>
 
-      {/* 各問の見直し */}
-      <div className="space-y-3">
+      {/* 各問の見直し（アコーディオン） */}
+      <div className="space-y-2">
         {questions.map((q, i) => {
           const userAns = answers[i];
           const isCorrect = userAns === q.answer;
           return (
-            <div
+            <ReviewCard
               key={i}
-              className={[
-                "rounded-lg border p-4",
-                isCorrect
-                  ? "border-green-200 bg-white"
-                  : "border-red-200 bg-red-50/40",
-              ].join(" ")}
-            >
-              <div className="mb-2 flex items-start justify-between gap-2">
-                <p className="font-semibold text-gray-900">
-                  <span className="mr-1 text-gray-400">Q{i + 1}.</span>
-                  {q.q}
-                </p>
-                <span
-                  className={[
-                    "flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-bold",
-                    isCorrect
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700",
-                  ].join(" ")}
-                >
-                  {isCorrect ? "正解" : "不正解"}
-                </span>
-              </div>
-
-              <ul className="space-y-1 text-sm">
-                {q.options.map((opt, oi) => {
-                  const isAns = oi === q.answer;
-                  const isUser = oi === userAns;
-                  return (
-                    <li
-                      key={oi}
-                      className={[
-                        "rounded px-2 py-1",
-                        isAns
-                          ? "bg-green-100 font-medium text-green-900"
-                          : isUser
-                            ? "bg-red-100 text-red-900"
-                            : "text-gray-600",
-                      ].join(" ")}
-                    >
-                      {LABELS[oi]}. {opt}
-                      {isAns && " ← 正解"}
-                      {isUser && !isAns && " ← あなたの回答"}
-                      {isUser && userAns === null}
-                    </li>
-                  );
-                })}
-                {userAns === null && (
-                  <li className="px-2 text-xs text-gray-400">（未回答）</li>
-                )}
-              </ul>
-
-              <p className="mt-2 rounded bg-gray-50 px-2 py-1.5 text-sm text-gray-600">
-                💡 {q.explanation}
-              </p>
-
-              <div className="mt-1 flex items-center justify-between">
-                <ExplainButton topic={q.category} />
-                <ReportButton />
-              </div>
-            </div>
+              q={q}
+              index={i}
+              userAns={userAns}
+              isCorrect={isCorrect}
+            />
           );
         })}
       </div>
@@ -123,23 +84,111 @@ export default function ResultView({
         <button
           type="button"
           onClick={onRetry}
-          className="flex-1 rounded-lg bg-straw-600 px-4 py-3 font-semibold text-white transition hover:bg-straw-700"
+          className="flex-1 rounded-xl bg-straw-600 px-4 py-3.5 font-black text-white shadow-sm transition hover:bg-straw-700 active:scale-[0.98]"
         >
           もう一度挑戦
         </button>
         <button
           type="button"
           onClick={onHome}
-          className="flex-1 rounded-lg border border-gray-200 px-4 py-3 font-semibold text-gray-700 transition hover:bg-gray-50"
+          className="flex-1 rounded-xl border-2 border-[#ddd0b8] bg-white px-4 py-3.5 font-bold text-[#5a4a38] transition hover:border-straw-400"
         >
-          トップページへ戻る
+          トップへ戻る
         </button>
       </div>
     </div>
   );
 }
 
-// 「この問題は間違っている」報告ボタン（ローカル完結・導線のみ）
+function ReviewCard({
+  q,
+  index,
+  userAns,
+  isCorrect,
+}: {
+  q: Question;
+  index: number;
+  userAns: number | null;
+  isCorrect: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div
+      className={[
+        "overflow-hidden rounded-xl border-2",
+        isCorrect ? "border-emerald-200" : "border-red-200",
+      ].join(" ")}
+    >
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className={[
+          "flex w-full items-center gap-3 px-4 py-3 text-left",
+          isCorrect ? "bg-emerald-50" : "bg-red-50",
+        ].join(" ")}
+      >
+        <span
+          className={[
+            "flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-black text-white",
+            isCorrect ? "bg-emerald-500" : "bg-red-400",
+          ].join(" ")}
+        >
+          {isCorrect ? "○" : "×"}
+        </span>
+        <span className="flex-1 text-sm font-bold text-[#1c1209]">
+          Q{index + 1}. {q.q}
+        </span>
+        <span className="flex-shrink-0 text-sm text-[#b0a080]">
+          {expanded ? "▲" : "▼"}
+        </span>
+      </button>
+
+      {expanded && (
+        <div className="bg-white px-4 pb-4 pt-3">
+          <ul className="mb-3 space-y-1">
+            {q.options.map((opt, oi) => {
+              const isAns = oi === q.answer;
+              const isUser = oi === userAns;
+              return (
+                <li
+                  key={oi}
+                  className={[
+                    "rounded-lg px-3 py-1.5 text-sm",
+                    isAns
+                      ? "bg-emerald-100 font-bold text-emerald-900"
+                      : isUser
+                        ? "bg-red-100 text-red-900"
+                        : "text-[#7a6a52]",
+                  ].join(" ")}
+                >
+                  {LABELS[oi]}. {opt}
+                  {isAns && (
+                    <span className="ml-1 text-emerald-700">← 正解</span>
+                  )}
+                  {isUser && !isAns && (
+                    <span className="ml-1 text-red-600">← あなたの回答</span>
+                  )}
+                </li>
+              );
+            })}
+            {userAns === null && (
+              <li className="px-2 text-xs text-[#b0a080]">（未回答）</li>
+            )}
+          </ul>
+          <div className="rounded-xl border border-[#e2cfa8] bg-[#fdf7ef] px-3 py-2.5 text-sm leading-relaxed text-[#3a2a18]">
+            💡 {q.explanation}
+          </div>
+          <div className="mt-2 flex items-center justify-between">
+            <ExplainButton topic={q.category} />
+            <ReportButton />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ReportButton() {
   const [reported, setReported] = useState(false);
   return (
@@ -147,8 +196,7 @@ function ReportButton() {
       type="button"
       onClick={() => setReported(true)}
       disabled={reported}
-      className="text-xs text-gray-400 hover:text-gray-600"
-      title="この問題に誤りがあると感じたら報告できます"
+      className="text-xs text-[#c0b090] transition hover:text-[#7a6a52]"
     >
       {reported ? "報告ありがとうございます" : "⚑ 誤りを報告"}
     </button>

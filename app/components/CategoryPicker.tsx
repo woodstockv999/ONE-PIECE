@@ -13,8 +13,10 @@ export default function CategoryPicker({
 
   return (
     <div>
-      <h2 className="mb-2 text-sm font-semibold text-gray-700">カテゴリ</h2>
-      <div className="flex flex-wrap gap-2">
+      <h2 className="mb-2.5 text-xs font-black text-[#5a4a38] uppercase tracking-widest">
+        カテゴリ
+      </h2>
+      <div className="flex flex-wrap gap-1.5">
         {PRESET_CATEGORIES.map((c) => {
           const active = c === value;
           return (
@@ -22,30 +24,26 @@ export default function CategoryPicker({
               key={c}
               type="button"
               onClick={() => onChange(c)}
-              className={[
-                "rounded-full border px-3 py-1.5 text-sm transition",
-                active
-                  ? "border-straw-600 bg-straw-600 text-white"
-                  : "border-gray-200 bg-white text-gray-700 hover:border-straw-300",
-              ].join(" ")}
               aria-pressed={active}
+              className={[
+                "rounded-full border px-3 py-1 text-sm font-medium transition-all",
+                active
+                  ? "border-straw-600 bg-straw-600 text-white shadow-sm"
+                  : "border-[#d9c9a8] bg-white text-[#5a4a38] hover:border-straw-400 hover:text-straw-700",
+              ].join(" ")}
             >
               {c}
             </button>
           );
         })}
       </div>
-
-      <div className="mt-3">
-        <label className="mb-1 block text-xs text-gray-500">
-          自由入力（特定の編なども指定可。例：ワノ国編、空島編、頂上戦争）
-        </label>
+      <div className="mt-2.5">
         <input
           type="text"
           value={isPreset ? "" : value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="自由にカテゴリ・テーマを入力"
-          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-straw-500 focus:outline-none focus:ring-1 focus:ring-straw-500"
+          placeholder="自由入力：ワノ国編、空島編、頂上戦争など"
+          className="w-full rounded-xl border-2 border-[#d9c9a8] bg-white px-3 py-2 text-sm text-[#3a2a18] placeholder:text-[#b0a080] transition focus:border-straw-500 focus:outline-none focus:ring-1 focus:ring-straw-500"
         />
       </div>
     </div>

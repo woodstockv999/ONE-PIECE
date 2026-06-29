@@ -8,7 +8,6 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // 麦わら帽子を想起させる落ち着いた赤系アクセント
         straw: {
           50: "#fdf3f2",
           100: "#fbe3e1",
@@ -20,6 +19,12 @@ const config: Config = {
           700: "#9e2925",
           800: "#832623",
           900: "#6e2522",
+        },
+        gold: {
+          300: "#fcd34d",
+          400: "#fbbf24",
+          500: "#e0a415",
+          600: "#b8870f",
         },
       },
     },

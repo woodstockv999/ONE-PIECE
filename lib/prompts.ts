@@ -22,13 +22,14 @@ export function buildQuizPrompt(
   count: number,
   seenQuestions: string[] = [],
 ): string {
+  const salt = Math.random().toString(36).slice(2, 8);
   const seenSection =
     seenQuestions.length > 0
       ? `\n# 【絶対禁止】既出問題リスト\n以下は過去に出題済みの問題文です。\n- これらと「全く同じ問題」は絶対に出題しない。\n- これらと「同じ知識を問う問題」（言い回しを変えても正解が同じになる問題）も絶対に出題しない。\n- 出題前に各問を必ずこのリストと照合すること。\n${seenQuestions.map((q, i) => `${i + 1}. ${q}`).join("\n")}\n`
       : "";
 
   return `あなたは漫画「ONE PIECE」（尾田栄一郎・集英社）に精通したクイズ作成者です。
-以下の条件で4択クイズを${count}問作成してください。
+以下の条件で4択クイズを${count}問作成してください。（生成ID: ${salt}）
 
 # 条件
 - 難易度: ${difficulty}（${DIFFICULTY_GUIDE[difficulty]}）

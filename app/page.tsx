@@ -33,24 +33,17 @@ const COUNTS = [3, 5, 10];
 
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("select");
-
-  // 出題設定
   const [difficulty, setDifficulty] = useState<Difficulty>("初級");
   const [category, setCategory] = useState<string>("総合（ミックス）");
-  const [count, setCount] = useState<number>(3);
+  const [count, setCount] = useState<number>(5);
   const [latestMode, setLatestMode] = useState<boolean>(false);
-
-  // 進行中のクイズ
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
   const [error, setError] = useState<string | null>(null);
-
-  // 永続データ
   const [settings, setSettings] = useState<Settings>({ gradingMode: "batch" });
   const [score, setScore] = useState<ScoreBoardType | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
 
-  // 初回ロード（クライアントのみ）
   useEffect(() => {
     setSettings(loadSettings());
     setScore(loadScore());
@@ -68,11 +61,17 @@ export default function Home() {
     setPhase("loading");
     const endpoint = latestMode ? "/api/latest" : "/api/quiz";
 
-    // localStorage から直接読んで既出問題文を最大30件収集してモデルに渡す（重複防止）
-    // React ステートの更新タイミングに依存せず確実に最新履歴を取得する
-    const seenQuestions = loadHistory()
-      .flatMap((entry) => entry.questions.map((q) => q.q))
-      .slice(0, 60);
+    const hist = loadHistory();
+    // 同カテゴリの既出問題を優先してモデルに渡す（重複防止の精度向上）
+    const sameCat = hist
+      .filter((e) => e.category === category)
+      .flatMap((e) => e.questions.map((q) => q.q));
+    const otherCat = hist
+      .filter((e) => e.category !== category)
+      .flatMap((e) => e.questions.map((q) => q.q));
+    const seenQuestions = [
+      ...new Set([...sameCat.slice(0, 80), ...otherCat.slice(0, 20)]),
+    ];
 
     try {
       const res = await fetch(withBasePath(endpoint), {
@@ -94,8 +93,17 @@ export default function Home() {
         return;
       }
       const d = data as { questions: Question[] };
-      setQuestions(d.questions);
-      setAnswers(d.questions.map(() => null));
+
+      // クライアント側でも完全一致の重複を除去（モデルが指示を無視した場合の保険）
+      const seenSet = new Set(hist.flatMap((e) => e.questions.map((q) => q.q)));
+      const fresh = d.questions.filter((q) => !seenSet.has(q.q));
+      const finalQuestions =
+        fresh.length >= Math.ceil(d.questions.length / 2)
+          ? fresh.slice(0, count)
+          : d.questions.slice(0, count);
+
+      setQuestions(finalQuestions);
+      setAnswers(finalQuestions.map(() => null));
       setPhase("playing");
     } catch {
       setError("通信に失敗しました。ネットワークを確認してください。");
@@ -105,12 +113,8 @@ export default function Home() {
 
   function finishQuiz(finalAnswers: (number | null)[]) {
     setAnswers(finalAnswers);
-
-    // スコア更新
     const newScore = updateScoreWithResult(difficulty, questions, finalAnswers);
     setScore(newScore);
-
-    // 履歴保存
     const correct = questions.reduce(
       (acc, q, i) => acc + (finalAnswers[i] === q.answer ? 1 : 0),
       0,
@@ -130,7 +134,6 @@ export default function Home() {
       score: correct,
     };
     setHistory(addHistory(entry));
-
     setPhase("result");
   }
 
@@ -144,172 +147,188 @@ export default function Home() {
     window.scrollTo({ top: 0 });
   }
 
-  function handleDeleteHistory(id: string) {
-    setHistory(deleteHistory(id));
-  }
-
-  function handleClearHistory() {
-    clearHistory();
-    setHistory([]);
-  }
-
-  function handleResetScore() {
-    resetScore();
-    setScore(loadScore());
-  }
-
   return (
-    <main className="mx-auto max-w-3xl px-4 py-6 sm:py-10">
+    <main className="mx-auto max-w-[600px] px-4 py-8 sm:py-12">
       {/* ヘッダー */}
-      <header className="mb-6 text-center">
-        <h1 className="text-2xl font-extrabold tracking-tight text-straw-700 sm:text-3xl">
-          🏴‍☠️ ONE PIECE クイズ
+      <header className="mb-7 text-center">
+        <div className="text-5xl leading-none mb-2">🏴‍☠️</div>
+        <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
+          ONE PIECE <span className="text-straw-400">クイズ</span>
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          難易度を選んで4択クイズに挑戦しよう
-        </p>
+        <p className="mt-1.5 text-sm text-white/40">4択クイズで海賊知識を試せ</p>
       </header>
 
       {/* メインカード */}
-      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
-        {phase === "select" && (
-          <div className="space-y-5">
-            <DifficultyPicker value={difficulty} onChange={setDifficulty} />
-            <CategoryPicker value={category} onChange={setCategory} />
+      <section className="rounded-2xl border border-[#e2cfa8] bg-[#fdf7ef] shadow-[0_8px_40px_rgba(0,0,0,0.45)] overflow-hidden">
+        <div className="h-1.5 bg-gradient-to-r from-straw-600 via-gold-500 to-straw-600" />
 
-            {/* 問題数 */}
-            <div>
-              <h2 className="mb-2 text-sm font-semibold text-gray-700">
-                問題数
-              </h2>
-              <div className="flex gap-2">
-                {COUNTS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setCount(c)}
-                    className={[
-                      "rounded-lg border px-4 py-2 text-sm font-medium transition",
-                      c === count
-                        ? "border-straw-600 bg-straw-600 text-white"
-                        : "border-gray-200 bg-white text-gray-700 hover:border-straw-300",
-                    ].join(" ")}
-                  >
-                    {c}問
-                  </button>
-                ))}
+        <div className="p-5 sm:p-7">
+          {phase === "select" && (
+            <div className="space-y-6">
+              <DifficultyPicker value={difficulty} onChange={setDifficulty} />
+              <CategoryPicker value={category} onChange={setCategory} />
+
+              {/* 問題数 */}
+              <div>
+                <h2 className="mb-2.5 text-xs font-black text-[#5a4a38] uppercase tracking-widest">
+                  問題数
+                </h2>
+                <div className="flex gap-2">
+                  {COUNTS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setCount(c)}
+                      className={[
+                        "flex-1 rounded-xl border-2 py-2.5 text-sm font-bold transition-all",
+                        c === count
+                          ? "border-straw-600 bg-straw-600 text-white shadow-sm"
+                          : "border-[#ddd0b8] bg-white text-[#5a4a38] hover:border-straw-400",
+                      ].join(" ")}
+                    >
+                      {c}問
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* オプション */}
-            <div className="space-y-3 rounded-lg bg-gray-50 p-3">
-              <label className="flex items-center justify-between text-sm">
-                <span className="text-gray-700">
-                  即時採点（1問ずつ答え合わせ）
-                </span>
-                <input
-                  type="checkbox"
+              {/* オプション */}
+              <div className="rounded-xl border border-[#e2cfa8] bg-[#f5ead5] p-4 space-y-3">
+                <ToggleRow
+                  label="即時採点（1問ずつ答え合わせ）"
                   checked={settings.gradingMode === "instant"}
-                  onChange={(e) =>
-                    setGradingMode(e.target.checked ? "instant" : "batch")
-                  }
-                  className="h-4 w-4 accent-straw-600"
+                  onChange={(v) => setGradingMode(v ? "instant" : "batch")}
                 />
-              </label>
-              <label className="flex items-center justify-between text-sm">
-                <span className="text-gray-700">
-                  ⚡ 最新話モード（Web検索）
-                </span>
-                <input
-                  type="checkbox"
+                <div className="h-px bg-[#e2cfa8]" />
+                <ToggleRow
+                  label="⚡ 最新話モード（Web検索）"
                   checked={latestMode}
-                  onChange={(e) => setLatestMode(e.target.checked)}
-                  className="h-4 w-4 accent-straw-600"
+                  onChange={setLatestMode}
                 />
-              </label>
-              {latestMode && (
-                <p className="rounded bg-amber-50 px-2 py-1.5 text-xs text-amber-800">
-                  ⚠️ ネタバレ注意：最新話の展開に関する問題が出ます。Google検索のため生成に数十秒かかります。
+                {latestMode && (
+                  <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    ⚠️ ネタバレ注意：最新話の内容が出ます。Google検索のため数十秒かかります。
+                  </p>
+                )}
+              </div>
+
+              {error && (
+                <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+                  {error}
                 </p>
               )}
+
+              <button
+                type="button"
+                onClick={startQuiz}
+                className="w-full rounded-xl bg-straw-600 px-4 py-4 text-base font-black text-white shadow-md transition hover:bg-straw-700 active:scale-[0.98]"
+              >
+                ⚓ クイズ開始
+              </button>
             </div>
+          )}
 
-            {error && (
-              <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-                {error}
-              </p>
-            )}
+          {phase === "loading" && (
+            <div className="flex flex-col items-center justify-center py-20 gap-5">
+              <div className="h-14 w-14 animate-spin rounded-full border-4 border-[#e2cfa8] border-t-straw-600" />
+              <div className="text-center">
+                <p className="font-bold text-[#3a2a18]">
+                  {latestMode ? "最新情報を検索中…" : "問題を生成中…"}
+                </p>
+                {latestMode && (
+                  <p className="mt-1 text-xs text-[#7a6a52]">
+                    Web検索のため数十秒かかります
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
-            <button
-              type="button"
-              onClick={startQuiz}
-              className="w-full rounded-xl bg-straw-600 px-4 py-3.5 text-base font-bold text-white transition hover:bg-straw-700"
-            >
-              クイズ開始
-            </button>
-          </div>
-        )}
+          {phase === "playing" && (
+            <QuizPlayer
+              questions={questions}
+              gradingMode={settings.gradingMode}
+              onFinish={finishQuiz}
+            />
+          )}
 
-        {phase === "loading" && (
-          <div className="flex flex-col items-center justify-center py-16">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-straw-200 border-t-straw-600" />
-            <p className="mt-4 text-sm text-gray-600">
-              {latestMode ? "最新情報を検索中…" : "問題を作成中…"}
-            </p>
-            {latestMode && (
-              <p className="mt-1 text-xs text-gray-400">
-                Web検索のため数十秒かかります
-              </p>
-            )}
-          </div>
-        )}
-
-        {phase === "playing" && (
-          <QuizPlayer
-            questions={questions}
-            gradingMode={settings.gradingMode}
-            onFinish={finishQuiz}
-          />
-        )}
-
-        {phase === "result" && (
-          <ResultView
-            questions={questions}
-            answers={answers}
-            onRetry={() => {
-              setPhase("loading");
-              startQuiz();
-            }}
-            onHome={() => {
-              setPhase("select");
-              setError(null);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-          />
-        )}
+          {phase === "result" && (
+            <ResultView
+              questions={questions}
+              answers={answers}
+              onRetry={startQuiz}
+              onHome={() => {
+                setPhase("select");
+                setError(null);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            />
+          )}
+        </div>
       </section>
 
       {/* スコア & 履歴 */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        {score && <ScoreBoard score={score} onReset={handleResetScore} />}
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {score && (
+          <ScoreBoard
+            score={score}
+            onReset={() => {
+              resetScore();
+              setScore(loadScore());
+            }}
+          />
+        )}
         <HistorySidebar
           history={history}
           onOpen={openHistory}
-          onDelete={handleDeleteHistory}
-          onClear={handleClearHistory}
+          onDelete={(id) => setHistory(deleteHistory(id))}
+          onClear={() => {
+            clearHistory();
+            setHistory([]);
+          }}
         />
       </div>
 
-      {/* フッター（権利・免責） */}
-      <footer className="mt-8 space-y-1 text-center text-[11px] leading-relaxed text-gray-400">
+      <footer className="mt-8 space-y-1 text-center text-[11px] leading-relaxed text-white/25">
         <p>
           本アプリは個人利用・学習目的の非公式ファンツールです。ONE PIECE は
-          集英社／尾田栄一郎氏 の著作物です。
+          集英社／尾田栄一郎氏の著作物です。
         </p>
-        <p>
-          問題・解説は AI（Claude）が生成しており、誤りを含む場合があります。
-        </p>
+        <p>問題・解説は AI（Claude）が生成しており、誤りを含む場合があります。</p>
       </footer>
     </main>
+  );
+}
+
+function ToggleRow({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center justify-between gap-3">
+      <span className="text-sm text-[#3a2a18]">{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={[
+          "relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors",
+          checked ? "bg-straw-600" : "bg-[#ccc0a0]",
+        ].join(" ")}
+      >
+        <span
+          className={[
+            "inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform",
+            checked ? "translate-x-[22px]" : "translate-x-0.5",
+          ].join(" ")}
+        />
+      </button>
+    </label>
   );
 }
