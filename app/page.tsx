@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import DifficultyPicker from "./components/DifficultyPicker";
 import CategoryPicker from "./components/CategoryPicker";
 import QuizPlayer from "./components/QuizPlayer";
@@ -43,11 +43,13 @@ export default function Home() {
   const [settings, setSettings] = useState<Settings>({ gradingMode: "batch" });
   const [score, setScore] = useState<ScoreBoardType | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     setSettings(loadSettings());
     setScore(loadScore());
     setHistory(loadHistory());
+    return () => { abortRef.current?.abort(); };
   }, []);
 
   function setGradingMode(mode: GradingMode) {
@@ -57,6 +59,11 @@ export default function Home() {
   }
 
   async function startQuiz() {
+    // 前のリクエストをキャンセルして並行実行を防ぐ
+    abortRef.current?.abort();
+    const abort = new AbortController();
+    abortRef.current = abort;
+
     setError(null);
     setPhase("loading");
     const endpoint = latestMode ? "/api/latest" : "/api/quiz";
@@ -78,6 +85,7 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ difficulty, category, count, seenQuestions }),
+        signal: abort.signal,
       });
       let data: unknown;
       try {
@@ -105,7 +113,9 @@ export default function Home() {
       setQuestions(finalQuestions);
       setAnswers(finalQuestions.map(() => null));
       setPhase("playing");
-    } catch {
+    } catch (err) {
+      // ページを離れた・Safariを閉じた場合は AbortError — エラー表示しない
+      if (err instanceof Error && err.name === "AbortError") return;
       setError("通信に失敗しました。ネットワークを確認してください。");
       setPhase("select");
     }
