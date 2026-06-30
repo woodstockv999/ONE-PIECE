@@ -4,9 +4,9 @@
 # 役割:
 #   - リポジトリを取得/更新し、basePath=/onepiece でビルド
 #   - PM2 で :3001 常駐（既存なら再起動）
-#   - ポータル(index.html)を /var/www/portal に配置（sudo）
 #   - Nginx をポータル構成（/ , /marumie→3000 , /onepiece→3001）に設定
 #     ※ nginx 操作のみ sudo が必要。それ以外は一般ユーザーで実行可能。
+#   - ポータルトップページ(index.html)自体は別リポジトリ（woodstockv999/portal）が管轄
 #
 # 使い方（W00dst0ck ユーザーで実行）:
 #   [推奨] claude login 済みであれば API キー不要:
@@ -91,11 +91,6 @@ else
 fi
 pm2 save
 
-# --- ポータル配置（/var/www/portal に固定） ---
-log "ポータルを配置: /var/www/portal"
-sudo mkdir -p /var/www/portal
-sudo cp "$APP_DIR/deploy/portal/index.html" /var/www/portal/index.html
-
 # --- Nginx 設定（sudo が必要な部分のみ） ---
 log "Nginx 設定を適用 (sudo が必要)"
 # nginx.conf は /var/www/portal を実パスとして直接使うため sed 置換不要
@@ -105,4 +100,4 @@ sudo rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/onepiece
 sudo nginx -t
 sudo systemctl reload nginx
 
-log "完了: http://210.131.212.62/onepiece で確認してください（ポータルは / ）"
+log "完了: http://210.131.212.62/onepiece で確認してください（ポータル本体は別リポジトリ portal で管理）"
