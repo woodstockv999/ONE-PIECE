@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# Stop hook: ターン終了時に staged 変更を一括 commit & push し、開発日誌への記録を促す
+# Stop hook: ターン終了時に staged 変更を一括 commit & push し、開発日誌への記録を促す。
+# 記録条件は3種類を統合: (1) git push (2) git管理外ファイルの編集 (3) インフラ系Bashコマンド
+# → いずれも /tmp/claude-diary-activity に集約される（git push分はこのスクリプトが追記）。
 
 REPOS_FILE="/tmp/claude-push-repos"
-DIARY_PENDING="/tmp/claude-diary-pending"
+ACTIVITY_FILE="/tmp/claude-diary-activity"
 
 if [ -f "$REPOS_FILE" ]; then
   sort -u "$REPOS_FILE" | while read -r repo; do
@@ -13,24 +15,24 @@ if [ -f "$REPOS_FILE" ]; then
     git commit -m "auto: update $FILES"
     git push origin main 2>/dev/null || git push origin HEAD 2>/dev/null
     git pull origin main 2>/dev/null || true
-    echo "$(basename "$repo"): ${FILES}" >> "$DIARY_PENDING"
+    echo "[push] $(basename "$repo"): ${FILES}" >> "$ACTIVITY_FILE"
   done
   rm -f "$REPOS_FILE"
 fi
 
-# 今回 push したアプリがあれば、停止前に開発日誌への記録を一度だけ強制する
-if [ -s "$DIARY_PENDING" ]; then
-  PENDING_LIST=$(cat "$DIARY_PENDING")
-  rm -f "$DIARY_PENDING"
+# 今回のターンに記録すべき活動（push／git管理外編集／インフラ操作）があれば、停止前に一度だけ確認を促す
+if [ -s "$ACTIVITY_FILE" ]; then
+  ACTIVITY_LIST=$(cat "$ACTIVITY_FILE")
+  rm -f "$ACTIVITY_FILE"
   REASON=$(cat <<EOF
-今回のターンで以下のアプリに変更を push しました:
-${PENDING_LIST}
+今回のターンで以下の作業がありました:
+${ACTIVITY_LIST}
 
-開発日誌（diary アプリ）にまだ記録されていません。応答を終了する前に、アプリごとに今回の変更内容を2〜4行程度の日本語（具体的に。汎用的な文言は不可）で要約し、次のコマンドで記録してください:
+開発日誌（diary アプリ）にまだ記録されていません。応答を終了する前に、意味のある作業ごとに2〜4行程度の日本語（具体的に。汎用的な文言は不可）で要約し、次のコマンドで記録してください:
 
-curl -s -X POST http://127.0.0.1:3009/diary/api/entries -H "Content-Type: application/json" -d '{"app":"<アプリ名>","content":"<要約>","author":"claude"}'
+curl -s -X POST http://127.0.0.1:3009/diary/api/entries -H "Content-Type: application/json" -d '{"app":"<アプリ名 or general>","content":"<要約>","author":"claude"}'
 
-記録が完了したら、通常どおり応答を終了してください。
+確認・調査のみで実質的な変更を伴わない場合は、記録せずそのまま終了してよい。記録が完了 or 不要と判断したら、通常どおり応答を終了してください。
 EOF
 )
   jq -n --arg reason "$REASON" '{decision: "block", reason: $reason}'

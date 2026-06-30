@@ -18,6 +18,15 @@
             "command": "/home/w00dst0ck/.claude/hooks/track-skill.sh"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/w00dst0ck/.claude/hooks/track-activity.sh"
+          }
+        ]
       }
     ],
     "Stop": [

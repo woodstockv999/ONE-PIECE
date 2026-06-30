@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# PostToolUse hook: 編集ファイルを git add して repo パスを記録するだけ
+# PostToolUse hook: 編集ファイルを git add して repo パスを記録する。
+# git管理外のファイルは日誌用の活動ログに記録する。
 
 INPUT=$(cat)
 FILE=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
@@ -8,7 +9,10 @@ FILE=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
 [ ! -f "$FILE" ] && exit 0
 
 GIT_ROOT=$(git -C "$(dirname "$FILE")" rev-parse --show-toplevel 2>/dev/null)
-[ -z "$GIT_ROOT" ] && exit 0
+if [ -z "$GIT_ROOT" ]; then
+  echo "[edit] $FILE" >> /tmp/claude-diary-activity
+  exit 0
+fi
 
 cd "$GIT_ROOT" || exit 0
 git add "$FILE"
