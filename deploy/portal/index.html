@@ -26,40 +26,47 @@
 
       .card-list { list-style: none; margin: 0; padding: 0; }
 
-      .card-item {
-        margin-bottom: 12px;
-        cursor: grab;
-      }
-      .card-item:active { cursor: grabbing; }
-      .card-item.dragging { opacity: 0.4; }
-      .card-item.drag-over > a.card { border-color: #d24b44; border-style: dashed; }
-
       a.card {
-        display: flex;
-        align-items: center;
+        display: block;
         text-decoration: none;
         color: inherit;
         background: #fff;
         border: 1px solid #e5e7eb;
         border-radius: 14px;
         padding: 16px 18px;
+        margin-bottom: 12px;
         transition: border-color .15s, transform .05s;
-        gap: 10px;
       }
       a.card:hover { border-color: #d24b44; }
       a.card:active { transform: scale(0.99); }
-      .card-body { flex: 1; min-width: 0; }
       .title { font-weight: 700; font-size: 1.05rem; }
       .desc { color: #6b7280; font-size: 0.85rem; margin-top: 2px; }
-      .emoji { font-size: 1.3rem; flex-shrink: 0; }
-      .drag-handle {
-        color: #d1d5db;
-        font-size: 1rem;
-        flex-shrink: 0;
-        user-select: none;
-        line-height: 1;
-      }
+      .emoji { font-size: 1.3rem; margin-right: 8px; }
       footer { margin-top: 16px; text-align: center; color: #9ca3af; font-size: 0.7rem; }
+
+      /* ドラッグ中の元カード */
+      .card-item.is-dragging > a.card {
+        opacity: 0.3;
+        border-style: dashed;
+      }
+      /* ドロップ先インジケータ */
+      .card-item.drop-above { border-top: 3px solid #d24b44; border-radius: 3px; }
+      .card-item.drop-below { border-bottom: 3px solid #d24b44; border-radius: 3px; }
+
+      /* 浮かぶクローン */
+      #drag-clone {
+        position: fixed;
+        pointer-events: none;
+        z-index: 9999;
+        width: var(--clone-w);
+        opacity: 0.92;
+        transform: scale(1.03);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        border-radius: 14px;
+        background: #fff;
+        border: 1px solid #d24b44;
+        padding: 16px 18px;
+      }
     </style>
   </head>
   <body>
@@ -72,13 +79,13 @@
 
     <script>
       const APPS = [
-        { id: 'marumie',  href: '/marumie',   emoji: '🔍', title: 'まるみえ',                        desc: 'まるみえアプリ' },
-        { id: 'onepiece', href: '/onepiece',  emoji: '🏴‍☠️', title: 'ONE PIECE クイズ',               desc: '難易度別の4択クイズに挑戦' },
-        { id: 'tasks',    href: '/tasks/',    emoji: '✅', title: 'タスク管理',                       desc: 'Claudeへの依頼メモ' },
-        { id: 'agents',   href: '/agents/',   emoji: '🤖', title: 'エージェント / ダイケイモニター', desc: '登録エージェント・プラグイン管理・ダイケイ監視ログ' },
+        { id: 'marumie',  href: '/marumie',  emoji: '🔍', title: 'まるみえ',                        desc: 'まるみえアプリ' },
+        { id: 'onepiece', href: '/onepiece', emoji: '🏴‍☠️', title: 'ONE PIECE クイズ',               desc: '難易度別の4択クイズに挑戦' },
+        { id: 'tasks',    href: '/tasks/',   emoji: '✅', title: 'タスク管理',                       desc: 'Claudeへの依頼メモ' },
+        { id: 'agents',   href: '/agents/',  emoji: '🤖', title: 'エージェント / ダイケイモニター', desc: '登録エージェント・プラグイン管理・ダイケイ監視ログ' },
       ];
 
-      const STORAGE_KEY = 'portal-order';
+      const STORAGE_KEY = 'portal-order-v2';
 
       function loadOrder() {
         try {
@@ -89,11 +96,12 @@
             return [...ordered, ...rest];
           }
         } catch {}
-        return APPS;
+        return [...APPS];
       }
 
-      function saveOrder(items) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(items.map(a => a.id)));
+      function saveOrder() {
+        const ids = [...document.querySelectorAll('.card-item')].map(el => el.dataset.id);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
       }
 
       function renderList(items) {
@@ -102,78 +110,162 @@
         items.forEach(app => {
           const li = document.createElement('li');
           li.className = 'card-item';
-          li.draggable = true;
           li.dataset.id = app.id;
-          li.innerHTML = `
-            <a class="card" href="${app.href}">
-              <span class="drag-handle">⠿</span>
-              <span class="emoji">${app.emoji}</span>
-              <div class="card-body">
-                <div class="title">${app.title}</div>
-                <div class="desc">${app.desc}</div>
-              </div>
-            </a>`;
+          li.innerHTML = `<a class="card" href="${app.href}">
+            <div class="title"><span class="emoji">${app.emoji}</span>${app.title}</div>
+            <div class="desc">${app.desc}</div>
+          </a>`;
           list.appendChild(li);
         });
-        attachDrag();
+        attachTouch();
       }
 
-      let dragSrc = null;
+      // ---- タッチドラッグ実装 ----
+      const LONG_PRESS_MS = 400;
+      let pressTimer = null;
+      let dragItem = null;
+      let clone = null;
+      let offsetX = 0, offsetY = 0;
 
-      function attachDrag() {
-        const items = document.querySelectorAll('.card-item');
-        items.forEach(item => {
-          item.addEventListener('dragstart', e => {
-            dragSrc = item;
-            item.classList.add('dragging');
-            e.dataTransfer.effectAllowed = 'move';
-          });
-          item.addEventListener('dragend', () => {
-            item.classList.remove('dragging');
-            document.querySelectorAll('.card-item').forEach(i => i.classList.remove('drag-over'));
-            const newOrder = [...document.querySelectorAll('.card-item')].map(
-              el => APPS.find(a => a.id === el.dataset.id)
-            ).filter(Boolean);
-            saveOrder(newOrder);
-          });
-          item.addEventListener('dragover', e => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            if (dragSrc && dragSrc !== item) {
-              document.querySelectorAll('.card-item').forEach(i => i.classList.remove('drag-over'));
-              item.classList.add('drag-over');
-            }
-          });
-          item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
-          item.addEventListener('drop', e => {
-            e.preventDefault();
-            if (!dragSrc || dragSrc === item) return;
-            const list = item.parentNode;
-            const allItems = [...list.querySelectorAll('.card-item')];
-            const srcIdx = allItems.indexOf(dragSrc);
-            const dstIdx = allItems.indexOf(item);
-            if (srcIdx < dstIdx) {
-              list.insertBefore(dragSrc, item.nextSibling);
-            } else {
-              list.insertBefore(dragSrc, item);
-            }
-          });
+      function getItemAt(x, y) {
+        // クローンを一時的に非表示にしてhitTestする
+        if (clone) clone.style.display = 'none';
+        const el = document.elementFromPoint(x, y);
+        if (clone) clone.style.display = '';
+        return el && el.closest('.card-item');
+      }
 
-          // タッチ対応（長押し→スクロール防止でドラッグ）
-          let touchStartY, touchItem, touchClone, touchOffset;
+      function startDrag(item, touch) {
+        dragItem = item;
+        item.classList.add('is-dragging');
+
+        const rect = item.getBoundingClientRect();
+        offsetX = touch.clientX - rect.left;
+        offsetY = touch.clientY - rect.top;
+
+        clone = document.createElement('div');
+        clone.id = 'drag-clone';
+        clone.style.setProperty('--clone-w', rect.width + 'px');
+        clone.innerHTML = item.querySelector('a.card').innerHTML;
+        clone.style.left = (touch.clientX - offsetX) + 'px';
+        clone.style.top  = (touch.clientY - offsetY) + 'px';
+        document.body.appendChild(clone);
+
+        // 振動フィードバック（対応端末のみ）
+        if (navigator.vibrate) navigator.vibrate(30);
+      }
+
+      function moveDrag(touch) {
+        if (!clone) return;
+        clone.style.left = (touch.clientX - offsetX) + 'px';
+        clone.style.top  = (touch.clientY - offsetY) + 'px';
+
+        document.querySelectorAll('.card-item').forEach(i => {
+          i.classList.remove('drop-above', 'drop-below');
+        });
+
+        const target = getItemAt(touch.clientX, touch.clientY);
+        if (target && target !== dragItem) {
+          const rect = target.getBoundingClientRect();
+          const mid = rect.top + rect.height / 2;
+          if (touch.clientY < mid) {
+            target.classList.add('drop-above');
+          } else {
+            target.classList.add('drop-below');
+          }
+        }
+      }
+
+      function endDrag(touch) {
+        if (!dragItem) return;
+
+        const target = getItemAt(touch.clientX, touch.clientY);
+        if (target && target !== dragItem) {
+          const rect = target.getBoundingClientRect();
+          const mid = rect.top + rect.height / 2;
+          const list = target.parentNode;
+          if (touch.clientY < mid) {
+            list.insertBefore(dragItem, target);
+          } else {
+            list.insertBefore(dragItem, target.nextSibling);
+          }
+          saveOrder();
+        }
+
+        dragItem.classList.remove('is-dragging');
+        document.querySelectorAll('.card-item').forEach(i => {
+          i.classList.remove('drop-above', 'drop-below');
+        });
+        if (clone) { clone.remove(); clone = null; }
+        dragItem = null;
+      }
+
+      function attachTouch() {
+        document.querySelectorAll('.card-item').forEach(item => {
           item.addEventListener('touchstart', e => {
-            touchItem = item;
-            touchStartY = e.touches[0].clientY;
+            const touch = e.touches[0];
+            pressTimer = setTimeout(() => {
+              pressTimer = null;
+              startDrag(item, touch);
+            }, LONG_PRESS_MS);
           }, { passive: true });
+
           item.addEventListener('touchmove', e => {
-            if (!touchItem) return;
-            const dy = Math.abs(e.touches[0].clientY - touchStartY);
-            if (dy > 8) e.preventDefault();
+            if (pressTimer) {
+              // 指が動いたら長押し判定をキャンセル（スクロール意図）
+              clearTimeout(pressTimer);
+              pressTimer = null;
+            }
+            if (!dragItem) return;
+            e.preventDefault();
+            moveDrag(e.touches[0]);
           }, { passive: false });
+
+          item.addEventListener('touchend', e => {
+            if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+            if (!dragItem) return;
+            e.preventDefault();
+            const last = e.changedTouches[0];
+            endDrag(last);
+          }, { passive: false });
+
+          item.addEventListener('touchcancel', () => {
+            if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+            if (dragItem) dragItem.classList.remove('is-dragging');
+            document.querySelectorAll('.card-item').forEach(i => i.classList.remove('drop-above','drop-below'));
+            if (clone) { clone.remove(); clone = null; }
+            dragItem = null;
+          });
         });
       }
 
+      // デスクトップ用 HTML5 D&D
+      function attachMouse() {
+        let src = null;
+        document.querySelectorAll('.card-item').forEach(item => {
+          item.draggable = true;
+          item.addEventListener('dragstart', () => { src = item; item.classList.add('is-dragging'); });
+          item.addEventListener('dragend',   () => { item.classList.remove('is-dragging'); document.querySelectorAll('.card-item').forEach(i=>i.classList.remove('drop-above','drop-below')); saveOrder(); });
+          item.addEventListener('dragover',  e => {
+            e.preventDefault();
+            if (!src || src === item) return;
+            document.querySelectorAll('.card-item').forEach(i=>i.classList.remove('drop-above','drop-below'));
+            const mid = item.getBoundingClientRect().top + item.getBoundingClientRect().height / 2;
+            item.classList.add(e.clientY < mid ? 'drop-above' : 'drop-below');
+          });
+          item.addEventListener('dragleave', () => item.classList.remove('drop-above','drop-below'));
+          item.addEventListener('drop', e => {
+            e.preventDefault();
+            if (!src || src === item) return;
+            const mid = item.getBoundingClientRect().top + item.getBoundingClientRect().height / 2;
+            item.parentNode.insertBefore(src, e.clientY < mid ? item : item.nextSibling);
+          });
+        });
+      }
+
+      const isTouchDevice = () => window.matchMedia('(pointer: coarse)').matches;
       renderList(loadOrder());
+      if (!isTouchDevice()) attachMouse();
     </script>
   </body>
 </html>
