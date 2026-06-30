@@ -159,6 +159,13 @@ export default function Home() {
 
   return (
     <main className="mx-auto max-w-[600px] px-4 py-8 sm:py-12">
+      <a
+        href="/"
+        className="mb-4 inline-block text-xs font-medium text-white/35 transition hover:text-white/60"
+      >
+        ← ポータルへ
+      </a>
+
       {/* ヘッダー */}
       <header className="mb-7 text-center">
         <div className="text-5xl leading-none mb-2">🏴‍☠️</div>
