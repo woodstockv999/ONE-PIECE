@@ -40,8 +40,16 @@ export function checkRateLimit(ip: string): boolean {
   return true;
 }
 
-/** nginx の proxy_pass 経由を想定し X-Forwarded-For からクライアントIPを取得 */
+/**
+ * nginx の proxy_pass 経由を想定しクライアントIPを取得。
+ * X-Forwarded-For はクライアントが任意の値を送れて偽装可能なため、
+ * nginx が $remote_addr で上書き設定している X-Real-IP を優先する。
+ */
 export function getClientIp(req: Request): string {
+  const realIp = req.headers.get("x-real-ip");
+  if (realIp) {
+    return realIp.trim();
+  }
   const forwardedFor = req.headers.get("x-forwarded-for");
   if (forwardedFor) {
     return forwardedFor.split(",")[0].trim();
