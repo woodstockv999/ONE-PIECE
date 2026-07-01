@@ -12,7 +12,7 @@ import { spawn } from "node:child_process";
 
 const CLAUDE_BIN = process.env.CLAUDE_BIN || "claude";
 const MODEL = process.env.CLAUDE_MODEL || "claude-haiku-4-5-20251001";
-const TIMEOUT_MS = Number(process.env.CLAUDE_CLI_TIMEOUT_MS || 55_000);
+const TIMEOUT_MS = Number(process.env.CLAUDE_CLI_TIMEOUT_MS || 65_000);
 
 export async function generateWithCliSearch(prompt: string): Promise<string> {
   const args = [
