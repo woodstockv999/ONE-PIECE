@@ -163,8 +163,8 @@ export default function Home() {
         <a href="/" className="text-white/35 transition hover:text-white/60" title="アプリ一覧へ戻る">
           🏠 ポータル
         </a>
-        <span className="text-white/20">›</span>
-        <span className="text-white/70 font-semibold">🏴‍☠️ 道場</span>
+        <span className="text-white/45">›</span>
+        <span className="text-white/70 font-semibold">道場</span>
       </div>
 
       {/* ヘッダー */}
