@@ -162,15 +162,15 @@ export default function Home() {
   }
 
   return (
-    <main className="mx-auto max-w-[600px] px-4 py-8 sm:py-12">
-      <div className="mb-4 flex items-center gap-1.5 text-xs font-medium">
+    <>
+      <div className="sticky top-0 z-30 flex items-center gap-1.5 border-b border-white/10 bg-[#0d1b2a]/95 px-4 py-2.5 text-xs font-medium backdrop-blur">
         <a href="/" className="text-white/35 transition hover:text-white/60" title="アプリ一覧へ戻る">
           🏠 ポータル
         </a>
         <span className="text-white/45">›</span>
-        <span className="text-white/70 font-semibold">道場</span>
+        <span className="text-white/70 font-semibold">🏴‍☠️ 道場</span>
       </div>
-
+      <main className="mx-auto max-w-[600px] px-4 py-8 sm:py-12">
       {/* ヘッダー */}
       <header className="mb-7 text-center">
         <div className="text-5xl leading-none mb-2">🏴‍☠️</div>
@@ -318,7 +318,8 @@ export default function Home() {
         </p>
         <p>問題・解説は AI（Claude）が生成しており、誤りを含む場合があります。</p>
       </footer>
-    </main>
+      </main>
+    </>
   );
 }
 
