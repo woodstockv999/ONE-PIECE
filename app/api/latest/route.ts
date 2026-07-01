@@ -6,8 +6,8 @@ import { generateWithCliSearch } from "@/lib/claudeCli";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
-// Web検索+WebFetch(話数の公開日検証)+生成で最大170秒（lib/claudeCli.tsのTIMEOUT_MSと合わせる）
-export const maxDuration = 170;
+// 速度優先: Web検索+生成で最大60秒程度（lib/claudeCli.tsのTIMEOUT_MSと合わせる）
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   if (!checkRateLimit(getClientIp(req))) {
