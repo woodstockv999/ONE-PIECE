@@ -5,14 +5,15 @@ import { spawn } from "node:child_process";
 //  Claude Pro/Max サブスクリプション認証 + WebSearch ツールで
 //  最新情報を検索しながら生成する（API キー従量課金なし）。
 //  Anthropic API の web_search ツールは OAuth では使えない（429になる）ため、
-//  Claude Code CLI 自体の WebSearch ツールを利用する。
-//  速度優先のため Haiku + WebSearch のみ（WebFetchでの話数裏取りは
-//  精度は上がるが count=5 で90〜100秒台までかかり不安定だったため撤回）。
+//  Claude Code CLI 自体の WebSearch ツールを利用する（WebFetchでの話数裏取りは
+//  精度は上がるが count=5 で90〜100秒台までかかり不安定だったため未使用）。
+//  2026-07-02: Haiku + WebSearch でも65秒タイムアウトに達するケースが確認された
+//  ため、精度優先でOpusに変更（WebSearchのみなのでWebFetch時ほどは遅くない想定）。
 // ─────────────────────────────────────────────────────────────
 
 const CLAUDE_BIN = process.env.CLAUDE_BIN || "claude";
-const MODEL = process.env.CLAUDE_MODEL || "claude-haiku-4-5-20251001";
-const TIMEOUT_MS = Number(process.env.CLAUDE_CLI_TIMEOUT_MS || 65_000);
+const MODEL = process.env.CLAUDE_MODEL || "claude-opus-4-8";
+const TIMEOUT_MS = Number(process.env.CLAUDE_CLI_TIMEOUT_MS || 90_000);
 
 export async function generateWithCliSearch(prompt: string): Promise<string> {
   const args = [
