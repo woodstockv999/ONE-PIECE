@@ -163,7 +163,7 @@ export default function Home() {
 
   return (
     <>
-      <div className="sticky top-0 z-30 flex items-center gap-1.5 border-b border-white/10 bg-[#0d1b2a]/95 px-4 py-2.5 text-xs font-medium backdrop-blur">
+      <div className="sticky top-0 z-30 flex items-center gap-1.5 border-b border-white/10 bg-[#0d1b2a]/95 px-4 py-3.5 text-xs font-medium backdrop-blur">
         <a href="/" className="text-white/35 transition hover:text-white/60" title="アプリ一覧へ戻る">
           🏠 ポータル
         </a>
