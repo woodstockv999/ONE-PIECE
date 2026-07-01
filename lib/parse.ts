@@ -20,9 +20,16 @@ export function extractText(content: unknown): string {
     .join("\n");
 }
 
-// ```json フェンス等を除去
+// ```json フェンス等を除去し、前後の余分なテキスト（Web検索の出典表記等）を
+// 切り落として純粋なJSON本体だけを取り出す
 export function cleanJson(text: string): string {
-  return text.replace(/```json|```/g, "").trim();
+  const stripped = text.replace(/```json|```/g, "").trim();
+  const start = stripped.indexOf("{");
+  const end = stripped.lastIndexOf("}");
+  if (start !== -1 && end !== -1 && end > start) {
+    return stripped.slice(start, end + 1);
+  }
+  return stripped;
 }
 
 // 1問のバリデーション
