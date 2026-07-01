@@ -8,9 +8,10 @@ import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-// 2026-07-01 の検証で claude-opus-4-8 は同一OAuthトークン下でも 429 が
-// 再現しなかったため採用（詳細は .claude/rules/anthropic-model.md）。
-const MODEL = "claude-opus-4-8";
+// claude-opus-4-8 を試したが、この経路（Anthropic SDK直叩き + OAuthトークン）では
+// 即 429 になることを2026-07-01に確認。Opusは claude CLI サブプロセス経由
+// （lib/claudeCli.ts）でのみ動作確認済み。詳細は .claude/rules/anthropic-model.md。
+const MODEL = "claude-haiku-4-5-20251001";
 
 // 深掘り・解説モード（§4-7）
 export async function POST(req: NextRequest) {
