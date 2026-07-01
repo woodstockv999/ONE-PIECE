@@ -4,6 +4,7 @@ import { cleanJson, parseQuiz } from "@/lib/parse";
 import { DIFFICULTIES, type Difficulty } from "@/lib/types";
 import { createGeminiClient, generateWithRetry } from "@/lib/geminiClient";
 import { getDummyLatestQuiz } from "@/lib/dummyQuiz";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 // Google Search + 生成 + 429 retry wait で最大120秒
@@ -15,6 +16,13 @@ const MODEL = "gemini-2.5-flash";
 const DEBUG_KEY = process.env.GEMINI_DEBUG_KEY ?? "";
 
 export async function POST(req: NextRequest) {
+  if (!checkRateLimit(getClientIp(req))) {
+    return NextResponse.json(
+      { error: "リクエストが多すぎます。しばらく待ってから再度お試しください。" },
+      { status: 429 },
+    );
+  }
+
   let body: { difficulty?: string; category?: string; count?: number; seenQuestions?: string[] };
   try {
     body = await req.json();

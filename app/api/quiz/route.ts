@@ -4,6 +4,7 @@ import { extractText, parseQuiz } from "@/lib/parse";
 import { errStatus, toUserMessage } from "@/lib/apiError";
 import { DIFFICULTIES, type Difficulty } from "@/lib/types";
 import { createAnthropicClient } from "@/lib/claudeClient";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 // 生成に数秒かかるため余裕を持たせる（Vercel の関数タイムアウト目安）
@@ -14,6 +15,13 @@ export const maxDuration = 60;
 const MODEL = "claude-haiku-4-5-20251001";
 
 export async function POST(req: NextRequest) {
+  if (!checkRateLimit(getClientIp(req))) {
+    return NextResponse.json(
+      { error: "リクエストが多すぎます。しばらく待ってから再度お試しください。" },
+      { status: 429 },
+    );
+  }
+
   let client: ReturnType<typeof createAnthropicClient>;
   try {
     client = createAnthropicClient();

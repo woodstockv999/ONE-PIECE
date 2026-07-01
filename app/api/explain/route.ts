@@ -3,6 +3,7 @@ import { buildExplainPrompt } from "@/lib/prompts";
 import { extractText } from "@/lib/parse";
 import { errStatus, toUserMessage } from "@/lib/apiError";
 import { createAnthropicClient } from "@/lib/claudeClient";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -13,6 +14,13 @@ const MODEL = "claude-haiku-4-5-20251001";
 
 // 深掘り・解説モード（§4-7）
 export async function POST(req: NextRequest) {
+  if (!checkRateLimit(getClientIp(req))) {
+    return NextResponse.json(
+      { error: "リクエストが多すぎます。しばらく待ってから再度お試しください。" },
+      { status: 429 },
+    );
+  }
+
   let client: ReturnType<typeof createAnthropicClient>;
   try {
     client = createAnthropicClient();
