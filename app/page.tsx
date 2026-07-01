@@ -105,10 +105,14 @@ export default function Home() {
       // クライアント側でも完全一致の重複を除去（モデルが指示を無視した場合の保険）
       const seenSet = new Set(hist.flatMap((e) => e.questions.map((q) => q.q)));
       const fresh = d.questions.filter((q) => !seenSet.has(q.q));
-      const finalQuestions =
-        fresh.length >= Math.ceil(d.questions.length / 2)
-          ? fresh.slice(0, count)
-          : d.questions.slice(0, count);
+      let finalQuestions = fresh.slice(0, count);
+      if (finalQuestions.length < count) {
+        // 新鮮な問題だけでは要求件数に満たない場合、取得済みの既出問題で不足分を
+        // 補い、要求された count 件を確実に返す（サイレントな件数不足を防ぐ）
+        const pickedSet = new Set(finalQuestions.map((q) => q.q));
+        const alreadySeen = d.questions.filter((q) => !pickedSet.has(q.q));
+        finalQuestions = [...finalQuestions, ...alreadySeen].slice(0, count);
+      }
 
       setQuestions(finalQuestions);
       setAnswers(finalQuestions.map(() => null));
