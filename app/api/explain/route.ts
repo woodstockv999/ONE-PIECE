@@ -8,9 +8,9 @@ import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-// claude-sonnet-4-6 は Claude Code と同一OAuthトークンでレートリミットを奪い合い 429 になるため Haiku を使用する。
-// 深掘り解説はトピック説明の用途なので Haiku で十分。
-const MODEL = "claude-haiku-4-5-20251001";
+// 2026-07-01 の検証で claude-opus-4-8 は同一OAuthトークン下でも 429 が
+// 再現しなかったため採用（詳細は .claude/rules/anthropic-model.md）。
+const MODEL = "claude-opus-4-8";
 
 // 深掘り・解説モード（§4-7）
 export async function POST(req: NextRequest) {
