@@ -159,12 +159,13 @@ export default function Home() {
 
   return (
     <main className="mx-auto max-w-[600px] px-4 py-8 sm:py-12">
-      <a
-        href="/"
-        className="mb-4 inline-block text-xs font-medium text-white/35 transition hover:text-white/60"
-      >
-        ← ポータルへ
-      </a>
+      <div className="mb-4 flex items-center gap-1.5 text-xs font-medium">
+        <a href="/" className="text-white/35 transition hover:text-white/60" title="アプリ一覧へ戻る">
+          🏠 ポータル
+        </a>
+        <span className="text-white/20">›</span>
+        <span className="text-white/70 font-semibold">🏴‍☠️ 道場</span>
+      </div>
 
       {/* ヘッダー */}
       <header className="mb-7 text-center">
