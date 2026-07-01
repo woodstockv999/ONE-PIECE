@@ -13,7 +13,9 @@ import { spawn } from "node:child_process";
 
 const CLAUDE_BIN = process.env.CLAUDE_BIN || "claude";
 const MODEL = process.env.CLAUDE_MODEL || "claude-opus-4-8";
-const TIMEOUT_MS = Number(process.env.CLAUDE_CLI_TIMEOUT_MS || 115_000);
+// Opus + WebFetch（話数の公開日検証）で count=5 だと90〜100秒台までかかることがあるため、
+// nginx の proxy_read_timeout（/onepiece/ は180s）に収まるよう余裕を持たせる。
+const TIMEOUT_MS = Number(process.env.CLAUDE_CLI_TIMEOUT_MS || 170_000);
 
 export async function generateWithCliSearch(prompt: string): Promise<string> {
   const args = [
