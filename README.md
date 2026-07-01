@@ -53,8 +53,7 @@ npm run dev
 
 | 変数名 | 説明 |
 |--------|------|
-| `GEMINI_API_KEY` | 問題生成に使用する Google Gemini API キー |
-| `ANTHROPIC_API_KEY` | （オプション）Claude による問題生成 |
+| `ANTHROPIC_API_KEY` | （オプション）claude CLI の OAuth トークンが無い/期限切れの場合のフォールバック |
 
 ## スクリプト
 

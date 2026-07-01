@@ -2,18 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { buildLatestQuizPrompt } from "@/lib/prompts";
 import { cleanJson, parseQuiz } from "@/lib/parse";
 import { DIFFICULTIES, type Difficulty } from "@/lib/types";
-import { createGeminiClient, generateWithRetry } from "@/lib/geminiClient";
-import { getDummyLatestQuiz } from "@/lib/dummyQuiz";
+import { generateWithCliSearch } from "@/lib/claudeCli";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
-// Google Search + 生成 + 429 retry wait で最大120秒
+// Web検索 + 生成で最大120秒
 export const maxDuration = 120;
-
-const MODEL = "gemini-2.5-flash";
-
-// GEMINI_DEBUG_KEY と一致するときはダミーデータを返す（レートリミット回避用）
-const DEBUG_KEY = process.env.GEMINI_DEBUG_KEY ?? "";
 
 export async function POST(req: NextRequest) {
   if (!checkRateLimit(getClientIp(req))) {
@@ -41,25 +35,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "難易度が不正です。" }, { status: 400 });
   }
 
-  // デバッグモード：GEMINI_API_KEY が GEMINI_DEBUG_KEY と一致する場合はダミーデータを返す
-  if (DEBUG_KEY && process.env.GEMINI_API_KEY === DEBUG_KEY) {
-    const data = getDummyLatestQuiz(count);
-    return NextResponse.json({ ...data, _debug: true });
-  }
-
-  let ai: ReturnType<typeof createGeminiClient>;
   try {
-    ai = createGeminiClient();
-  } catch (err) {
-    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
-  }
-
-  try {
-    const text = await generateWithRetry(
-      ai,
-      MODEL,
+    const text = await generateWithCliSearch(
       buildLatestQuizPrompt(difficulty, category, count, seenQuestions),
-      [{ googleSearch: {} }],
     );
 
     const data = parseQuiz(cleanJson(text));
@@ -74,34 +52,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(data);
   } catch (err: unknown) {
     const msg = String((err as { message?: string })?.message ?? "");
-    if (msg.includes("GEMINI_API_KEY")) {
-      return NextResponse.json({ error: msg }, { status: 500 });
-    }
-    // レートリミット・過負荷時はダミーデータにフォールバック（GEMINI_DEBUG_KEY が設定済みの場合のみ）
-    const isRateLimited =
-      msg.includes('"code":429') ||
-      msg.includes("RESOURCE_EXHAUSTED") ||
-      msg.includes('"code":503') ||
-      msg.includes("UNAVAILABLE");
-    if (isRateLimited && DEBUG_KEY) {
-      const data = getDummyLatestQuiz(count);
-      return NextResponse.json({ ...data, _debug: true });
-    }
-    if (msg.includes('"code":429') || msg.includes("RESOURCE_EXHAUSTED")) {
+    if (msg.includes("CLAUDE_CLI_TIMEOUT")) {
       return NextResponse.json(
-        { error: "Gemini APIのクォータを超過しました。しばらく待ってから再度お試しください。" },
-        { status: 429 },
-      );
-    }
-    if (msg.includes('"code":503') || msg.includes("UNAVAILABLE")) {
-      return NextResponse.json(
-        { error: "Gemini APIが一時的に混雑しています。しばらく待ってから再度お試しください。" },
-        { status: 503 },
-      );
-    }
-    if (msg.includes("GEMINI_TIMEOUT")) {
-      return NextResponse.json(
-        { error: "Gemini APIの応答がタイムアウトしました。しばらく待ってから再度お試しください。" },
+        { error: "検索に時間がかかっています。しばらく待ってから再度お試しください。" },
         { status: 504 },
       );
     }

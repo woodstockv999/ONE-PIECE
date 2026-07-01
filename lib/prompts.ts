@@ -88,7 +88,7 @@ export function buildLatestQuizPrompt(
   return `あなたは漫画「ONE PIECE」（尾田栄一郎・集英社）に精通したクイズ作成者です。
 今日は${today}です（セッションID: ${salt}）。
 
-# ステップ1: 必ずGoogle検索を実行すること（スキップ禁止）
+# ステップ1: 必ずWeb検索を実行すること（スキップ禁止）
 まず以下を検索してください:
 - 「ONE PIECE 最新話 ${today.slice(0, 7)} ネタバレ」
 - 「ワンピース 最新話 あらすじ」
