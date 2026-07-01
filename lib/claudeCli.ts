@@ -2,15 +2,18 @@ import { spawn } from "node:child_process";
 
 // ─────────────────────────────────────────────────────────────
 //  端末の `claude` を headless（-p）モードで起動し、
-//  Claude Pro/Max サブスクリプション認証 + WebSearch ツールで
+//  Claude Pro/Max サブスクリプション認証 + WebSearch/WebFetch ツールで
 //  最新情報を検索しながら生成する（API キー従量課金なし）。
 //  Anthropic API の web_search ツールは OAuth では使えない（429になる）ため、
-//  Claude Code CLI 自体の WebSearch ツールを利用する。
+//  Claude Code CLI 自体の WebSearch/WebFetch ツールを利用する。
+//  WebFetch も許可しているのは、話数一覧・公開日など検索スニペットだけでは
+//  拾えない一次情報をページ本文まで確認させ、ネタバレ速報ブログのタイトル
+//  だけを鵜呑みにして話数を誤判定するのを防ぐため。
 // ─────────────────────────────────────────────────────────────
 
 const CLAUDE_BIN = process.env.CLAUDE_BIN || "claude";
 const MODEL = process.env.CLAUDE_MODEL || "claude-haiku-4-5-20251001";
-const TIMEOUT_MS = Number(process.env.CLAUDE_CLI_TIMEOUT_MS || 100_000);
+const TIMEOUT_MS = Number(process.env.CLAUDE_CLI_TIMEOUT_MS || 115_000);
 
 export async function generateWithCliSearch(prompt: string): Promise<string> {
   const args = [
@@ -20,7 +23,7 @@ export async function generateWithCliSearch(prompt: string): Promise<string> {
     "--model",
     MODEL,
     "--allowedTools",
-    "WebSearch",
+    "WebSearch,WebFetch",
   ];
 
   return await new Promise<string>((resolve, reject) => {
